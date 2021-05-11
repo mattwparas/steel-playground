@@ -2,7 +2,7 @@ use instant::Instant;
 // use rhai::ParseError;
 use std::cell::RefCell;
 use wasm_bindgen::JsValue;
-use web_sys::console;
+// use web_sys::console;
 
 use itertools::Itertools;
 use steel::steel_vm::engine::Engine;
