@@ -58,7 +58,6 @@
 ;; contract: trie? string? integer? -> trie?
 (define (insert root-trie word)
   (define char-list (string->list word))
-  ; (displayln "@@@@ INSIDE INSERT @@@@")
   (trie
    (trie-char root-trie)
    (create-children char-list (trie-children root-trie) empty)
@@ -90,7 +89,6 @@
 (define (trie-sort list-of-words)
   (pre-order (build-trie-from-list-of-words empty-trie list-of-words)))
 
-; THIS ONE WORKS (using con and flatten)
 ;; contract: trie? -> (listof string?)
 (define (pre-order trie-node)
   (if (trie-end-word? trie-node)
@@ -98,8 +96,6 @@
       (flatten (map pre-order (trie-children trie-node))))
     (flatten (map pre-order (trie-children trie-node)))))
 
-;; a little print test
-; (define test-list (list "apple" "app" "ape" "nest"))
 
 (define test-list
   (list
