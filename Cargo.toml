@@ -2,7 +2,7 @@
 [package]
 name = "web-wasm"
 description = "An online playground for the Steel programming language"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Matthew Paras <mattwparas@gmail.com>"]
 categories = ["wasm"]
 readme = "README.md"
