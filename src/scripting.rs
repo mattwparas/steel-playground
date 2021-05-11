@@ -69,6 +69,16 @@ pub fn run_script(
         .map_err(|e| e.emit_result_to_string("", script))
 }
 
+pub fn compile_program(script: &str) -> Result<String, String> {
+    let mut engine = Engine::new_sandboxed();
+
+    engine.register_value("displayln", displayln(|x| {}));
+
+    engine
+        .disassemble(script)
+        .map_err(|e| e.emit_result_to_string("", script))
+}
+
 // thread_local! {
 //     static ENGINE_FOR_AST_ONLY: rhai::Engine = rhai::Engine::new();
 // }

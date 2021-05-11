@@ -27,10 +27,10 @@ pub fn run_script(
     )?)
 }
 
-// #[wasm_bindgen]
-// pub fn compile_script(script: String) -> Result<String, JsValue> {
-//     Ok(scripting::compile_ast(&script)?)
-// }
+#[wasm_bindgen]
+pub fn compile_script(script: String) -> Result<String, JsValue> {
+    Ok(scripting::compile_program(&script)?)
+}
 
 // When the `wee_alloc` feature is enabled, this uses `wee_alloc` as the global
 // allocator.

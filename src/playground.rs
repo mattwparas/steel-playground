@@ -51,6 +51,10 @@ pub fn displayln(print_callback: impl Fn(&str) + 'static) -> SteelVal {
 //     ))
 // }
 
+// pub fn compile_program(script: &str) -> Result<String, String> {
+
+// }
+
 impl Playground {
     pub fn new() -> Self {
         // let mut engine = rhai::Engine::new();
@@ -63,6 +67,14 @@ impl Playground {
 
         let engine = Engine::new_sandboxed();
         Self { engine }
+    }
+
+    pub fn disassemble(&mut self, script: &str) -> Result<String, String> {
+        self.engine.register_value("displayln", displayln(|x| {}));
+
+        self.engine
+            .disassemble(script)
+            .map_err(|e| e.emit_result_to_string("", script))
     }
 
     pub fn run_script(
@@ -146,6 +158,11 @@ impl PlaygroundExport {
     #[wasm_bindgen(constructor)]
     pub fn new() -> Self {
         Self(Playground::new())
+    }
+
+    #[wasm_bindgen(js_name = compileScript)]
+    pub fn compile_script(&mut self, script: String) -> Result<String, JsValue> {
+        Ok(self.0.disassemble(&script)?)
     }
 
     #[wasm_bindgen(js_name = runScript)]

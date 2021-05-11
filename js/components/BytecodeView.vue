@@ -81,6 +81,7 @@ function initEditor(vm) {
     foldGutter: {
       rangeFinder,
     },
+    theme: "darcula",
     gutters: ["CodeMirror-foldgutter"],
     styleActiveLine: true,
     highlightSelectionMatches: {

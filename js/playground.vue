@@ -233,13 +233,13 @@
           style="background-color: #002b36; color: #fff"
         ></textarea>
       </tab-item>
-      <!-- <tab-item label="AST">
+      <tab-item label="Bytecode">
         <ast-view
           style="overflow: hidden; height: 100%"
           ref="astView"
           :ast-text="astText"
         ></ast-view>
-      </tab-item> -->
+      </tab-item>
     </splittable-tabs>
   </div>
 </template>
@@ -247,7 +247,7 @@
 <script>
 import { wasm, wasmLoadPromise } from "./wasm_loader.js";
 
-import AstView from "./components/AstView.vue";
+import AstView from "./components/BytecodeView.vue";
 import Editor from "./components/editor.vue";
 import SplittableTabs from "./components/SplittableTabs.vue";
 import TabItem from "./components/TabItem.vue";
@@ -280,32 +280,23 @@ function initEditor(vm) {
    * @type CodeMirror.TextMarker?
    */
   let lastErrorMarker = null;
-  //   /**
-  //    *
-  //    * @param {CodeMirror.Editor} editor
-  //    */
-  //   function tryCompileScript(editor) {
-  //     if (lastErrorMarker) {
-  //       lastErrorMarker.clear();
-  //       lastErrorMarker = null;
-  //     }
-  //     try {
-  //       const astText = wasm.compile_script(editor.getValue());
-  //       return astText;
-  //     } catch (e) {
-  //       console.log("Parse error:", e);
-  //       if (typeof e.message === "string" && e.line && e.column) {
-  //         lastErrorMarker = editor.markText(
-  //           { line: e.line - 1, ch: e.column - 1 },
-  //           { line: e.line - 1, ch: e.column },
-  //           {
-  //             className: "rhai-error",
-  //             title: e.message,
-  //           }
-  //         );
-  //       }
-  //     }
-  //   }
+  /**
+   *
+   * @param {CodeMirror.Editor} editor
+   */
+  function tryCompileScript(editor) {
+    if (lastErrorMarker) {
+      lastErrorMarker.clear();
+      lastErrorMarker = null;
+    }
+    try {
+      const astText = wasm.compile_script(editor.getValue());
+      return astText;
+    } catch (e) {
+      // TODO
+      // console.log("Parse error:", e);
+    }
+  }
 
   const tryCompileDebounced = {
     delayMsec: 500,
@@ -320,8 +311,8 @@ function initEditor(vm) {
       this.timeout = window.setTimeout(() => this._fire(arg), this.delayMsec);
     },
     _fire(editor) {
-      //   vm.astText = tryCompileScript(editor) || "";
-      vm.astText = "";
+      vm.astText = tryCompileScript(editor) || "";
+      // vm.astText = "";
     },
   };
 
