@@ -29,7 +29,8 @@ opt-level = 's'
 js-sys = "0.3"
 serde = { version = "1.0", features = ["derive"] }
 instant = { version = "0.1", features = ["wasm-bindgen"] }
-steel = { path = "../../steel/steel" }
+# steel = { path = "../../steel/steel" }
+steel = { git = "https://github.com/mattwparas/steel", branch = "stack_local"}
 itertools = "0.10.0"
 
 # The `wasm-bindgen` crate provides the bare minimum functionality needed
