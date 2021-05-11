@@ -1,4 +1,4 @@
-use instant::Instant;
+// use instant::Instant;
 // use rhai::ParseError;
 use std::cell::RefCell;
 use wasm_bindgen::JsValue;
