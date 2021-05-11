@@ -38,18 +38,18 @@ pub fn displayln(print_callback: impl Fn(&str) + 'static) -> SteelVal {
     ))
 }
 
-pub fn newline(print_callback: impl Fn(&str) + 'static) -> SteelVal {
-    SteelVal::BoxedFunction(Rc::new(
-        move |args: &[SteelVal]| -> steel::rvals::Result<SteelVal> {
-            if args.is_empty() {
-                print_callback("");
-                Ok(SteelVal::Void)
-            } else {
-                stop!(ArityMismatch => "newline takes no arguments");
-            }
-        },
-    ))
-}
+// pub fn newline(print_callback: impl Fn(&str) + 'static) -> SteelVal {
+//     SteelVal::BoxedFunction(Rc::new(
+//         move |args: &[SteelVal]| -> steel::rvals::Result<SteelVal> {
+//             if args.is_empty() {
+//                 print_callback("");
+//                 Ok(SteelVal::Void)
+//             } else {
+//                 stop!(ArityMismatch => "newline takes no arguments");
+//             }
+//         },
+//     ))
+// }
 
 impl Playground {
     pub fn new() -> Self {
