@@ -72,10 +72,23 @@ pub fn run_script(
 pub fn compile_program(script: &str) -> Result<String, String> {
     let mut engine = Engine::new_sandboxed();
 
-    engine.register_value("displayln", displayln(|x| {}));
+    engine.register_value("displayln", displayln(|_| {}));
 
     engine
         .disassemble(script)
+        .map_err(|e| e.emit_result_to_string("", script))
+}
+
+pub fn compile_ast(script: &str) -> Result<String, String> {
+    Engine::emit_ast_to_string(script).map_err(|e| e.emit_result_to_string("", script))
+}
+
+pub fn compile_expanded_ast(script: &str) -> Result<String, String> {
+    let mut engine = Engine::new_sandboxed();
+
+    // engine.register_value("displayln", displayln(|_| {}));
+    engine
+        .emit_fully_expanded_ast_to_string(script)
         .map_err(|e| e.emit_result_to_string("", script))
 }
 

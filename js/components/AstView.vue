@@ -5,6 +5,7 @@
 <script>
 import CodeMirror from "codemirror";
 import "codemirror/addon/fold/foldcode.js";
+import "codemirror/mode/scheme/scheme.js";
 
 // This function is mostly copied from `codemirror/addon/fold/brace-fold.js`,
 // the code for the "brace" type "fold" helper.
@@ -77,23 +78,27 @@ function rangeFinder(cm, start) {
 
 function initEditor(vm) {
   const editor = CodeMirror(vm.$el, {
-    mode: "text/plain",
-    // lineNumbers: true,
-    // matchBrackets: true,
-    // foldGutter: {
-    //   rangeFinder,
-    // },
-    theme: "material-darker",
+    mode: "scheme",
+    matchBrackets: true,
+    lineNumbers: true,
+    foldGutter: {
+      rangeFinder,
+    },
     lineWrapping: true,
-    showCursorWhenSelecting: false,
-    // gutters: ["CodeMirror-foldgutter"],
-    // styleActiveLine: true,
-    // highlightSelectionMatches: {
-    //   minChars: 3,
-    //   showToken: true,
-    //   annotateScrollbar: true,
-    // },
+    theme: "material-darker",
+    gutters: ["CodeMirror-foldgutter"],
+    styleActiveLine: true,
+    highlightSelectionMatches: {
+      minChars: 3,
+      showToken: true,
+      annotateScrollbar: true,
+    },
     readOnly: true,
+    // extraKeys: {
+    //   Tab: (cm) => {
+    //     console.log("Trying to fold");
+    //   },
+    // },
   });
 
   return editor;
@@ -101,7 +106,7 @@ function initEditor(vm) {
 
 export default {
   props: {
-    bytecodeText: String,
+    astText: String,
   },
   methods: {
     /**
@@ -112,7 +117,7 @@ export default {
     },
   },
   watch: {
-    bytecodeText(newVal) {
+    astText(newVal) {
       const cm = this.getEditor();
       cm.setValue(newVal);
     },

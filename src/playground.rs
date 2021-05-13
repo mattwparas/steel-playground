@@ -70,10 +70,20 @@ impl Playground {
     }
 
     pub fn disassemble(&mut self, script: &str) -> Result<String, String> {
-        self.engine.register_value("displayln", displayln(|x| {}));
+        self.engine.register_value("displayln", displayln(|_| {}));
 
         self.engine
             .disassemble(script)
+            .map_err(|e| e.emit_result_to_string("", script))
+    }
+
+    pub fn emit_ast_to_string(&self, script: &str) -> Result<String, String> {
+        Engine::emit_ast_to_string(script).map_err(|e| e.emit_result_to_string("", script))
+    }
+
+    pub fn emit_expanded_ast_to_string(&mut self, script: &str) -> Result<String, String> {
+        self.engine
+            .emit_fully_expanded_ast_to_string(script)
             .map_err(|e| e.emit_result_to_string("", script))
     }
 
@@ -163,6 +173,16 @@ impl PlaygroundExport {
     #[wasm_bindgen(js_name = compileScript)]
     pub fn compile_script(&mut self, script: String) -> Result<String, JsValue> {
         Ok(self.0.disassemble(&script)?)
+    }
+
+    #[wasm_bindgen(js_name = compileAst)]
+    pub fn compile_ast(&self, script: String) -> Result<String, JsValue> {
+        Ok(self.0.emit_ast_to_string(&script)?)
+    }
+
+    #[wasm_bindgen(js_name = compileExpandedAst)]
+    pub fn compile_expanded_ast(&mut self, script: String) -> Result<String, JsValue> {
+        Ok(self.0.emit_expanded_ast_to_string(&script)?)
     }
 
     #[wasm_bindgen(js_name = runScript)]

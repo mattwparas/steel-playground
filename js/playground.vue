@@ -234,11 +234,25 @@
         ></textarea>
       </tab-item>
       <tab-item label="Bytecode">
+        <bytecode-view
+          style="overflow: hidden; height: 100%"
+          ref="bytecodeView"
+          :bytecode-text="bytecodeText"
+        ></bytecode-view>
+      </tab-item>
+      <tab-item label="Raw AST">
         <ast-view
           style="overflow: hidden; height: 100%"
           ref="astView"
           :ast-text="astText"
         ></ast-view>
+      </tab-item>
+      <tab-item label="Expanded AST">
+        <expanded-ast-view
+          style="overflow: hidden; height: 100%"
+          ref="expandedAstView"
+          :expanded-text="expandedAstText"
+        ></expanded-ast-view>
       </tab-item>
     </splittable-tabs>
   </div>
@@ -247,7 +261,9 @@
 <script>
 import { wasm, wasmLoadPromise } from "./wasm_loader.js";
 
-import AstView from "./components/BytecodeView.vue";
+import AstView from "./components/AstView.vue";
+import BytecodeView from "./components/BytecodeView.vue";
+import ExpandedAstView from "./components/ExpandedAstView.vue";
 import Editor from "./components/editor.vue";
 import SplittableTabs from "./components/SplittableTabs.vue";
 import TabItem from "./components/TabItem.vue";
@@ -256,13 +272,10 @@ import * as Runner from "./playground-runner";
 import CodeMirror from "codemirror";
 
 wasmLoadPromise.then(() => {
-  wasm.init_codemirror_pass(CodeMirror.Pass);
+  // wasm.init_codemirror_pass(CodeMirror.Pass);
   //   CodeMirror.mode = "scheme";
-
   //   CodeMirror.setOption("mode", "scheme");
-
   // CodeMirror
-
   // CodeMirror.defineMode("rhai", (cfg, mode) => {
   //     return new wasm.RhaiMode(cfg.indentUnit);
   // });
@@ -273,6 +286,8 @@ const initialCode = `\
     (define x 10)
     (define y 20)
     (list 1 2 3 4 x y))
+
+(foo)
 `;
 
 function initEditor(vm) {
@@ -290,11 +305,52 @@ function initEditor(vm) {
       lastErrorMarker = null;
     }
     try {
-      const astText = wasm.compile_script(editor.getValue());
-      return astText;
+      const bytecode = wasm.compile_script(editor.getValue());
+      return bytecode;
     } catch (e) {
       // TODO
       // console.log("Parse error:", e);
+      return e;
+    }
+  }
+
+  /**
+   *
+   * @param {CodeMirror.Editor} editor
+   */
+  function tryCompileAstScript(editor) {
+    if (lastErrorMarker) {
+      lastErrorMarker.clear();
+      lastErrorMarker = null;
+    }
+    try {
+      // console.log("Compiling the AST");
+      const astText = wasm.compile_ast(editor.getValue());
+      return astText;
+    } catch (e) {
+      // TODO
+      // console.log("Parse error");
+      return e;
+    }
+  }
+
+  /**
+   *
+   * @param {CodeMirror.Editor} editor
+   */
+  function tryCompileExpandedAstScript(editor) {
+    if (lastErrorMarker) {
+      lastErrorMarker.clear();
+      lastErrorMarker = null;
+    }
+    try {
+      // console.log("Compiling the expanded AST");
+      const astText = wasm.compile_expanded_ast(editor.getValue());
+      return astText;
+    } catch (e) {
+      // TODO
+      // console.log("Parse error");
+      return e;
     }
   }
 
@@ -311,7 +367,11 @@ function initEditor(vm) {
       this.timeout = window.setTimeout(() => this._fire(arg), this.delayMsec);
     },
     _fire(editor) {
-      vm.astText = tryCompileScript(editor) || "";
+      // vm.astText = tryCompileAstScript(editor) || "";
+      vm.bytecodeText = tryCompileScript(editor);
+      vm.astText = tryCompileAstScript(editor);
+      vm.expandedAstText = tryCompileExpandedAstScript(editor);
+      // console.log(vm.expandedAstText);
       // vm.astText = "";
     },
   };
@@ -495,7 +555,7 @@ export default {
     return {
       exampleScriptList,
       exampleScriptChangePromise: null,
-      selectedCmTheme: "darcula",
+      selectedCmTheme: "material-darker",
       cmThemeList,
       cmThemeChangePromise: null,
       isRunScriptOnWorker: true,
@@ -503,6 +563,8 @@ export default {
       runningOps: null,
       stopDisabled: true,
       astText: "",
+      bytecodeText: "",
+      expandedAstText: "",
       splitLayout: "auto",
       _isEmbedded: this.isEmbedded,
     };
@@ -586,7 +648,11 @@ export default {
       if (newTab === 0) {
         this.cmRefresh();
       } else if (newTab === 2) {
+        this.$nextTick(() => this.$refs.bytecodeView.getEditor().refresh());
+      } else if (newTab === 3) {
         this.$nextTick(() => this.$refs.astView.getEditor().refresh());
+      } else if (newTab === 4) {
+        this.$nextTick(() => this.$refs.expandedAstView.getEditor().refresh());
       }
     },
   },
@@ -609,7 +675,9 @@ export default {
       this.cmThemeChangePromise = cmThemesImport(`./${themeFile}.css`)
         .then((module) => {
           cm.setOption("theme", theme);
+          this.$refs.bytecodeView.getEditor().setOption("theme", theme);
           this.$refs.astView.getEditor().setOption("theme", theme);
+          this.$refs.expandedAstView.getEditor().setOption("theme", theme);
         })
         .catch((e) => {
           console.error("Error loading theme", e);
@@ -630,6 +698,13 @@ export default {
       cm.focus();
     });
   },
-  components: { AstView, Editor, SplittableTabs, TabItem },
+  components: {
+    AstView,
+    BytecodeView,
+    ExpandedAstView,
+    Editor,
+    SplittableTabs,
+    TabItem,
+  },
 };
 </script>

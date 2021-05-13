@@ -15,7 +15,7 @@ import "codemirror/addon/fold/foldgutter.css";
 import "codemirror/addon/search/match-highlighter";
 import "codemirror/addon/selection/active-line";
 import "codemirror/mode/scheme/scheme.js";
-import "codemirror/theme/darcula.css";
+import "codemirror/theme/material-darker.css";
 
 function initEditor(vm) {
   const editor = CodeMirror(vm.$el, {
@@ -26,7 +26,7 @@ function initEditor(vm) {
     foldGutter: {
       rangeFinder: CodeMirror.fold.brace,
     },
-    theme: "darcula",
+    theme: "material-darker",
     gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
     styleActiveLine: true,
     highlightSelectionMatches: {
