@@ -24,13 +24,11 @@ opt-level = 's'
 #default = ["wee_alloc"]
 
 [dependencies]
-# rhai = { version = "0.20", features = [ "only_i64", "no_optimize", "internals" ] }
-# rhai = { version = "0.19.16", features = [ "only_i64", "no_optimize", "internals" ], git = "https://github.com/rhaiscript/rhai.git", branch = "master" }
 js-sys = "0.3"
 serde = { version = "1.0", features = ["derive"] }
 instant = { version = "0.1", features = ["wasm-bindgen"] }
 # steel = { path = "../../steel/steel" }
-steel = { git = "https://github.com/mattwparas/steel", branch = "stack_local"}
+steel = { git = "https://github.com/mattwparas/steel", branch = "master"}
 itertools = "0.10.0"
 
 # The `wasm-bindgen` crate provides the bare minimum functionality needed
