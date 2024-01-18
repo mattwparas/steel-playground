@@ -55,8 +55,8 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 pub fn main_js() -> Result<(), JsValue> {
     // This provides better error messages in debug mode.
     // It's disabled in release mode so it doesn't bloat up the file size.
-    #[cfg(debug_assertions)]
-    console_error_panic_hook::set_once();
+    // #[cfg(debug_assertions)]
+    // console_error_panic_hook::set_once();
 
     Ok(())
 }

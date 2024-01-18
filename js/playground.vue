@@ -94,7 +94,7 @@
                 role="button"
                 type="button"
               >
-                <span>Example Scripts</span>
+                <span>Examples</span>
                 <b-icon icon="menu-down" />
               </button>
               <b-dropdown-item
@@ -114,7 +114,7 @@
                 slot="trigger"
                 role="button"
                 native-type="button"
-                >Config</b-button
+                >Editor Configuration</b-button
               >
 
               <b-dropdown-item aria-role="menu-item" :focusable="false" custom>
@@ -179,9 +179,9 @@
                           target="_blank"
                           >Steel</a
                         >
-                        is an embedded scripting language and evaluation engine
-                        for Rust that enables safe scripting for any
-                        application. It also exists as a standalone language.
+                        is an embedded scheme implementation in Rust. It can be
+                        used to enable scripting inside an application or on its
+                        own as a standalone language.
                       </p>
                       <h1>Hotkeys</h1>
                       <p>
@@ -201,7 +201,7 @@
                         >
                         version: {{ VERSION }} </span
                       ><br />
-                      <span>compiled with Steel {{ RHAI_VERSION }}</span>
+                      <span>compiled with Steel {{ STEEL_VERSION }}</span>
                     </div>
                   </footer>
                 </div>
@@ -276,9 +276,6 @@ wasmLoadPromise.then(() => {
   //   CodeMirror.mode = "scheme";
   //   CodeMirror.setOption("mode", "scheme");
   // CodeMirror
-  // CodeMirror.defineMode("rhai", (cfg, mode) => {
-  //     return new wasm.RhaiMode(cfg.indentUnit);
-  // });
 });
 
 const initialCode = `\
@@ -499,7 +496,7 @@ function initEditor(vm) {
 const exampleScriptsImport = require.context(
   "!raw-loader!../example-scripts/",
   false,
-  /\.rkt$/,
+  /\.scm$/,
   "lazy"
 );
 let exampleScriptList = [];
@@ -583,8 +580,8 @@ export default {
     VERSION() {
       return VERSION;
     },
-    RHAI_VERSION() {
-      return RHAI_VERSION;
+    STEEL_VERSION() {
+      return STEEL_VERSION;
     },
   },
   methods: {

@@ -3,50 +3,36 @@ use steel::steel_vm::engine::Engine;
 use wasm_bindgen::prelude::*;
 
 use std::rc::Rc;
+use std::sync::Arc;
 use steel::rerrs::{ErrorKind, SteelErr};
 use steel::rvals::SteelVal;
 use steel::stop;
+
+use crate::scripting::PrintCallback;
 
 pub struct Playground {
     engine: Engine,
 }
 
-pub fn displayln(print_callback: impl Fn(&str) + 'static) -> SteelVal {
-    SteelVal::BoxedFunction(Rc::new(
-        move |args: &[SteelVal]| -> steel::rvals::Result<SteelVal> {
-            if args.len() > 0 {
-                // let print_val = &args[0];
-
-                let mut buffer = String::new();
-
-                for value in args {
-                    match value {
-                        SteelVal::StringV(s) => buffer.push_str(s.as_ref()),
-                        _ => buffer.push_str(value.to_string().as_str()),
-                    }
-                }
-
-                print_callback(buffer.as_str());
-                Ok(SteelVal::Void)
-            } else {
-                stop!(ArityMismatch => "display takes at least one argument");
-            }
-        },
-    ))
-}
-
 impl Playground {
     pub fn new() -> Self {
-        let engine = Engine::new_sandboxed();
+        let engine = Engine::new();
         Self { engine }
     }
 
     pub fn disassemble(&mut self, script: &str) -> Result<String, String> {
-        self.engine.register_value("displayln", displayln(|_| {}));
+        // self.engine.register_value("displayln", displayln(|_| {}));
 
-        self.engine
-            .disassemble(script)
-            .map_err(|e| e.emit_result_to_string("", script))
+        let program = self
+            .engine
+            .emit_raw_program_no_path(script.to_string())
+            .map_err(|e| e.emit_result_to_string("", script))?;
+
+        Ok(self
+            .engine
+            .debug_build_strings(program)
+            .map_err(|e| e.emit_result_to_string("", script))?
+            .join("\n"))
     }
 
     pub fn emit_ast_to_string(&self, script: &str) -> Result<String, String> {
@@ -55,7 +41,7 @@ impl Playground {
 
     pub fn emit_expanded_ast_to_string(&mut self, script: &str) -> Result<String, String> {
         self.engine
-            .emit_fully_expanded_ast_to_string(script)
+            .emit_fully_expanded_ast_to_string(script, None)
             .map_err(|e| e.emit_result_to_string("", script))
     }
 
@@ -66,11 +52,19 @@ impl Playground {
         _debug_callback: impl Fn(&str) + 'static,
         _progress_callback: impl Fn(u64) + 'static,
     ) -> Result<String, String> {
-        self.engine
-            .register_value("displayln", displayln(print_callback));
+        let port_output = SteelVal::new_dyn_writer_port(PrintCallback {
+            callback: print_callback,
+        });
 
         self.engine
-            .run(script)
+            .call_function_by_name_with_args_from_mut_slice(
+                "current-output-port",
+                &mut [port_output],
+            )
+            .map_err(|e| e.emit_result_to_string("", script))?;
+
+        self.engine
+            .run(script.to_string())
             .map(|x| {
                 x.into_iter()
                     .filter(|x| !matches!(x, steel::rvals::SteelVal::Void))

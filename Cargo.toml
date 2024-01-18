@@ -6,7 +6,7 @@ version = "0.2.0"
 authors = ["Matthew Paras <mattwparas@gmail.com>"]
 categories = ["wasm"]
 readme = "README.md"
-edition = "2018"
+edition = "2021"
 publish = false
 
 [lib]
@@ -24,16 +24,20 @@ opt-level = 's'
 #default = ["wee_alloc"]
 
 [dependencies]
-js-sys = "0.3"
+js-sys = "0.3.67"
 serde = { version = "1.0", features = ["derive"] }
 instant = { version = "0.1", features = ["wasm-bindgen"] }
-# steel = { path = "../../steel/steel" }
-steel = { git = "https://github.com/mattwparas/steel", branch = "master"}
+# steel-core = { path = "../../steel/crates/steel-core", default-features = false, features = ["modules"] }
+steel-core = { git = "https://github.com/mattwparas/steel", branch = "master"}
 itertools = "0.10.0"
 
 # The `wasm-bindgen` crate provides the bare minimum functionality needed
 # to interact with JavaScript.
-wasm-bindgen = { version = "0.2.45", features = ["serde-serialize"] }
+wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
+
+getrandom = { version = "0.2", features = ["js"] }
+# console_error_panic_hook = "0.1.5"
+
 
 # # `wee_alloc` is a tiny allocator for wasm that is only ~1K in code size
 # # compared to the default allocator's ~10K. However, it is slower than the default
@@ -43,22 +47,22 @@ wasm-bindgen = { version = "0.2.45", features = ["serde-serialize"] }
 # The `web-sys` crate allows you to interact with the various browser APIs,
 # like the DOM.
 [dependencies.web-sys]
-version = "0.3.22"
+version = "0.3"
 features = ["console"]
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires
 # all the `std::fmt` and `std::panicking` infrastructure, so it's only enabled
 # in debug mode.
-[target."cfg(debug_assertions)".dependencies]
-console_error_panic_hook = "0.1.5"
+# [target."cfg(debug_assertions)".dependencies]
+# console_error_panic_hook = "0.1.5"
 
 # These crates are used for running unit tests.
 [dev-dependencies]
-wasm-bindgen-test = "0.2.45"
+wasm-bindgen-test = "0.2"
 futures = "0.1.27"
-js-sys = "0.3.22"
-wasm-bindgen-futures = "0.3.22"
+js-sys = "0.3.67"
+wasm-bindgen-futures = "0.3"
 
 [package.metadata.wasm-pack.profile.release]
 # See https://github.com/rustwasm/wasm-pack/issues/886#issuecomment-667669802

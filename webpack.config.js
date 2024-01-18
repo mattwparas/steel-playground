@@ -10,7 +10,7 @@ const gitRevisionPlugin = new GitRevisionPlugin({
 
 const fs = require('fs');
 const crateVersion = {
-  rhai: {
+  steel: {
     version: null,
     gitHash: null,
     isCratesIo: false,
@@ -18,33 +18,33 @@ const crateVersion = {
 };
 try {
   const cargoLock = fs.readFileSync(path.resolve(__dirname, "Cargo.lock"), { encoding: "utf8" });
-  // An awful RegExp to get the version of the `rhai` crate...
-  const matches = /\[\[package\]\]\r?\nname = "rhai"\r?\nversion = "([0-9\.]+)"(?:\r?\nsource = "([^"\r\n]+)"\r?\n)?/.exec(cargoLock);
+  const matches = /\[\[package\]\]\r?\nname = "steel-core"\r?\nversion = "([0-9\.]+)"(?:\r?\nsource = "([^"\r\n]+)"\r?\n)?/.exec(cargoLock);
   if (matches) {
-    crateVersion.rhai.version = matches[1];
+    crateVersion.steel.version = matches[1];
     if (typeof matches[2] !== "undefined") {
       if (matches[2].startsWith("git+")) {
         const gitHashMatches = /git[^#]+#([0-9a-f]+)/.exec(matches[2]);
         if (gitHashMatches) {
-          crateVersion.rhai.gitHash = gitHashMatches[1];
+          crateVersion.steel.gitHash = gitHashMatches[1];
         }
       } else if (matches[2] === "registry+https://github.com/rust-lang/crates.io-index") {
-        crateVersion.rhai.isCratesIo = true;
+        crateVersion.steel.isCratesIo = true;
       }
     }
   }
 } catch (ex) {
   console.warn("Failed to read Cargo.lock, skipping crate version defs", ex);
 }
-let rhaiVersionString = "unknown";
-if (crateVersion.rhai.version !== null) {
-  rhaiVersionString = crateVersion.rhai.version;
-  if (crateVersion.rhai.gitHash !== null) {
-    rhaiVersionString += ` (git+${crateVersion.rhai.gitHash.substr(0, 7)})`;
-  } else if (crateVersion.rhai.isCratesIo) {
-    rhaiVersionString += " (crates.io)";
+
+let steelVersionString = "unknown";
+if (crateVersion.steel.version !== null) {
+  steelVersionString = crateVersion.steel.version;
+  if (crateVersion.steel.gitHash !== null) {
+    steelVersionString += ` (git+${crateVersion.steel.gitHash.substr(0, 7)})`;
+  } else if (crateVersion.steel.isCratesIo) {
+    steelVersionString += " (crates.io)";
   } else {
-    rhaiVersionString += " (unknown source)";
+    steelVersionString += " (unknown source)";
   }
 }
 
@@ -114,7 +114,7 @@ module.exports = {
 
     new webpack.DefinePlugin({
       VERSION: JSON.stringify(gitRevisionPlugin.version()),
-      RHAI_VERSION: JSON.stringify(rhaiVersionString),
+      STEEL_VERSION: JSON.stringify(steelVersionString),
     }),
   ],
 };
