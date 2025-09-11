@@ -21,10 +21,10 @@ jobs:
     #   run: cargo check --target wasm32-unknown-unknown --locked
     - name: Install wasm-pack
       run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-    - name: Use Node.js 12.x
+    - name: Use Node.js 24.x
       uses: actions/setup-node@v1
       with:
-        node-version: 12.x
+        node-version: 24.x
     - run: npm install
     - run: npm run build
     - name: Upload build artifact
@@ -39,8 +39,8 @@ jobs:
         cd _deploy
         git config --local user.name github-actions[bot]
         git config --local user.email 41898282+github-actions[bot]@users.noreply.github.com
-        rm -rf dev/
-        mv ../dist dev
-        git add dev/
+        git rm -r .
+        mv ../dist/* .
+        git add .
         git commit -m "Action \`dist\`: Deploy ${GITHUB_SHA::7} as dev"
         git push

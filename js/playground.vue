@@ -491,50 +491,24 @@ function initEditor(vm) {
   };
 }
 
-// With the help of webpack, we can get a list of all the example script files
-// and the ability to lazily load them on demand:
-const exampleScriptsImport = require.context(
-  "!raw-loader!../example-scripts/",
-  false,
-  /\.scm$/,
-  "lazy"
-);
-let exampleScriptList = [];
-for (let key of exampleScriptsImport.keys()) {
-  const value = key;
-  if (key.startsWith("./")) {
-    key = key.substr(2);
-  }
-  const text = key;
-  exampleScriptList.push({ value, text });
-}
+const exampleScriptsImport = import.meta.glob("../example-scripts/*.scm", { query: "?raw" });
+let exampleScriptList = Object.keys(exampleScriptsImport).map(key => ({ text: key.split("/").pop(), value: key }));
 Object.freeze(exampleScriptList);
 
 // Include all the CodeMirror themes but load lazily:
-const cmThemesImport = require.context(
-  "codemirror/theme/",
-  false,
-  /\.css$/,
-  "lazy"
+const cmThemesImport = Object.fromEntries(
+  Object.entries(import.meta.glob("../node_modules/codemirror/theme/*.css")).map(([key, value]) => [key.split("/").pop().replace(/\.css$/, ''), value])
 );
-let cmThemeList = [];
-for (let key of cmThemesImport.keys()) {
-  if (!key.startsWith("./") || !key.endsWith(".css")) {
-    continue;
-  }
-  key = key.substring(2, key.length - 4);
-  function addOpt(key, name) {
-    const value = name ? `${key}/${name}` : key;
-    const text = name || key;
-    cmThemeList.push({ value, text });
-  }
-  if (key === "solarized") {
-    addOpt(key, `${key} dark`);
-    addOpt(key, `${key} light`);
-  } else {
-    addOpt(key);
-  }
+
+{
+  const solarized = cmThemesImport.solarized;
+  cmThemesImport['solarized dark'] = solarized;
+  cmThemesImport['solarized light'] = solarized;
+  delete cmThemesImport.solarized;
 }
+
+
+const cmThemeList = Object.keys(cmThemesImport).sort().map((key) => ({ value: key, text: key }));
 Object.freeze(cmThemeList);
 
 export default {
@@ -578,10 +552,10 @@ export default {
       }
     },
     VERSION() {
-      return VERSION;
+      return __GIT_REVISION__;
     },
     STEEL_VERSION() {
-      return STEEL_VERSION;
+      return __STEEL_VERSION__;
     },
   },
   methods: {
@@ -622,7 +596,7 @@ export default {
       const cm = this.getEditor();
       this.$_r.tryCompileDebounced.cancel();
       cm.setOption("readOnly", true);
-      this.exampleScriptChangePromise = exampleScriptsImport(key)
+      this.exampleScriptChangePromise = exampleScriptsImport[key]()
         .then((module) => {
           cm.setValue(module.default);
           this.$refs.codeTab.makeTabActive();
@@ -663,13 +637,8 @@ export default {
         cm.setOption("theme", "default");
         return;
       }
-      let themeFile = theme;
-      const slash = theme.indexOf("/");
-      if (slash !== -1) {
-        themeFile = theme.substring(0, slash);
-        theme = theme.substring(slash + 1);
-      }
-      this.cmThemeChangePromise = cmThemesImport(`./${themeFile}.css`)
+
+      this.cmThemeChangePromise = cmThemesImport[theme]()
         .then((module) => {
           cm.setOption("theme", theme);
           this.$refs.bytecodeView.getEditor().setOption("theme", theme);

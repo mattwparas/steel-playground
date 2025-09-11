@@ -7,10 +7,9 @@
 // webpack's WASM support and loading it the "manual" way, we stop webpack from
 // mangling the WASM module so that the module won't be duplicated.
 
-import wasmPath from "../pkg/index_bg.wasm";
-import wasmInit, * as wasm from "../pkg/index.js";
+import wasmInit, * as wasm from "../pkg/web_wasm.js";
 
-const wasmLoadPromise = wasmInit(wasmPath)
+const wasmLoadPromise = wasmInit();
 const wasmImport = wasmLoadPromise.then(_wasmInternal => wasm);
 
 export { wasm, wasmImport, wasmLoadPromise };
