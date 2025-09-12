@@ -17,8 +17,16 @@
     "vite": "^6.3.5"
   },
   "dependencies": {
+    "@codemirror/autocomplete": "^6.18.6",
+    "@codemirror/commands": "^6.8.1",
+    "@codemirror/language": "^6.11.2",
+    "@codemirror/state": "^6.5.2",
+    "@codemirror/view": "^6.38.1",
+    "@ddietr/codemirror-themes": "^1.5.2",
     "buefy": "^0.8.20",
-    "codemirror": "^5.61.0",
-    "vue": "^2.6.12"
+    "codemirror-helix": "^0.5.0",
+    "codemirror-lang-scheme": "^0.0.5",
+    "vue": "^2.6.12",
+    "vuex": "^3.6.2"
   }
 }
