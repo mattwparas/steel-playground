@@ -24,21 +24,12 @@
 </style>
 
 <style>
-.CodeMirror {
+.cm-editor {
   border: 1px solid #ccc;
   height: 100% !important;
   box-sizing: border-box;
   font-size: 0.95em;
   line-height: initial;
-}
-.CodeMirror .rhai-error {
-  text-decoration: underline wavy red;
-}
-.CodeMirror .cm-matchhighlight {
-  background-color: rgba(0, 0, 0, 0.1);
-}
-.CodeMirror .CodeMirror-selection-highlight-scrollbar {
-  background-color: rgba(0, 0, 0, 0.1);
 }
 </style>
 
@@ -121,10 +112,9 @@
                 <b-field label="Editor Theme">
                   <b-select
                     v-model="selectedCmTheme"
-                    :disabled="cmThemeChangePromise !== null"
+                    :disabled="store.state.busy"
                     expanded
                   >
-                    <option value="default">Default</option>
                     <option
                       v-for="i in cmThemeList"
                       :key="i.value"
@@ -132,6 +122,15 @@
                     >
                       {{ i.text }}
                     </option>
+                  </b-select>
+                </b-field>
+                <b-field label="Keybindings">
+                  <b-select
+                    v-model="keybindings"
+                    expanded
+                  >
+                    <option value="default">Default</option>
+                    <option value="helix">Helix</option>
                   </b-select>
                 </b-field>
                 <b-field label="Layout">
@@ -213,15 +212,17 @@
     </header>
     <splittable-tabs
       :layout="splitLayout"
-      @layoutChanged="cmRefresh()"
-      @activeTabChanged="activeTabChanged"
     >
       <tab-item label="Code" ref="codeTab" splittable>
         <editor
+          :store="store"
+          :readOnly="readOnly"
+          :examples="exampleScriptList"
           style="overflow: hidden; height: 100%"
           ref="editor"
           @change="codeChange"
           @requestRun="requestRun"
+          @switchExample="loadExampleScript"
         ></editor>
       </tab-item>
       <tab-item label="Output" ref="outputTab" class="outputPanel">
@@ -235,6 +236,7 @@
       </tab-item>
       <tab-item label="Bytecode">
         <bytecode-view
+          :store="store"
           style="overflow: hidden; height: 100%"
           ref="bytecodeView"
           :bytecode-text="bytecodeText"
@@ -242,6 +244,7 @@
       </tab-item>
       <tab-item label="Raw AST">
         <ast-view
+          :store="store"
           style="overflow: hidden; height: 100%"
           ref="astView"
           :ast-text="astText"
@@ -249,6 +252,7 @@
       </tab-item>
       <tab-item label="Expanded AST">
         <expanded-ast-view
+          :store="store"
           style="overflow: hidden; height: 100%"
           ref="expandedAstView"
           :expanded-text="expandedAstText"
@@ -259,7 +263,7 @@
 </template>
 
 <script>
-import { wasm, wasmLoadPromise } from "./wasm_loader.js";
+import { wasm } from "./wasm_loader.js";
 
 import AstView from "./components/AstView.vue";
 import BytecodeView from "./components/BytecodeView.vue";
@@ -268,15 +272,7 @@ import Editor from "./components/editor.vue";
 import SplittableTabs from "./components/SplittableTabs.vue";
 import TabItem from "./components/TabItem.vue";
 import * as Runner from "./playground-runner";
-
-import CodeMirror from "codemirror";
-
-wasmLoadPromise.then(() => {
-  // wasm.init_codemirror_pass(CodeMirror.Pass);
-  //   CodeMirror.mode = "scheme";
-  //   CodeMirror.setOption("mode", "scheme");
-  // CodeMirror
-});
+import { themes, createThemeStore } from "./themes";
 
 const initialCode = `\
 (define (foo)
@@ -288,21 +284,9 @@ const initialCode = `\
 `;
 
 function initEditor(vm) {
-  /**
-   * @type CodeMirror.TextMarker?
-   */
-  let lastErrorMarker = null;
-  /**
-   *
-   * @param {CodeMirror.Editor} editor
-   */
   function tryCompileScript(editor) {
-    if (lastErrorMarker) {
-      lastErrorMarker.clear();
-      lastErrorMarker = null;
-    }
     try {
-      const bytecode = wasm.compile_script(editor.getValue());
+      const bytecode = wasm.compile_script(editor.doc());
       return bytecode;
     } catch (e) {
       // TODO
@@ -311,18 +295,10 @@ function initEditor(vm) {
     }
   }
 
-  /**
-   *
-   * @param {CodeMirror.Editor} editor
-   */
   function tryCompileAstScript(editor) {
-    if (lastErrorMarker) {
-      lastErrorMarker.clear();
-      lastErrorMarker = null;
-    }
     try {
       // console.log("Compiling the AST");
-      const astText = wasm.compile_ast(editor.getValue());
+      const astText = wasm.compile_ast(editor.doc());
       return astText;
     } catch (e) {
       // TODO
@@ -331,18 +307,10 @@ function initEditor(vm) {
     }
   }
 
-  /**
-   *
-   * @param {CodeMirror.Editor} editor
-   */
   function tryCompileExpandedAstScript(editor) {
-    if (lastErrorMarker) {
-      lastErrorMarker.clear();
-      lastErrorMarker = null;
-    }
     try {
       // console.log("Compiling the expanded AST");
-      const astText = wasm.compile_expanded_ast(editor.getValue());
+      const astText = wasm.compile_expanded_ast(editor.doc());
       return astText;
     } catch (e) {
       // TODO
@@ -364,17 +332,14 @@ function initEditor(vm) {
       this.timeout = window.setTimeout(() => this._fire(arg), this.delayMsec);
     },
     _fire(editor) {
-      // vm.astText = tryCompileAstScript(editor) || "";
       vm.bytecodeText = tryCompileScript(editor);
       vm.astText = tryCompileAstScript(editor);
       vm.expandedAstText = tryCompileExpandedAstScript(editor);
-      // console.log(vm.expandedAstText);
-      // vm.astText = "";
     },
   };
 
   function doRunScriptSync(editor, resultEl) {
-    let script = editor.getValue();
+    let script = editor.doc();
     resultEl.value = "";
     function appendOutput(line) {
       let v = resultEl.value + line + "\n";
@@ -416,7 +381,7 @@ function initEditor(vm) {
       );
       return;
     }
-    let script = editor.getValue();
+    let script = editor.doc();
     el.value = "";
     let appendBuffer = "";
     let appendBufferTimeout = null;
@@ -495,21 +460,7 @@ const exampleScriptsImport = import.meta.glob("../example-scripts/*.scm", { quer
 let exampleScriptList = Object.keys(exampleScriptsImport).map(key => ({ text: key.split("/").pop(), value: key }));
 Object.freeze(exampleScriptList);
 
-// Include all the CodeMirror themes but load lazily:
-const cmThemesImport = Object.fromEntries(
-  Object.entries(import.meta.glob("../node_modules/codemirror/theme/*.css")).map(([key, value]) => [key.split("/").pop().replace(/\.css$/, ''), value])
-);
-
-{
-  const solarized = cmThemesImport.solarized;
-  cmThemesImport['solarized dark'] = solarized;
-  cmThemesImport['solarized light'] = solarized;
-  delete cmThemesImport.solarized;
-}
-
-
-const cmThemeList = Object.keys(cmThemesImport).sort().map((key) => ({ value: key, text: key }));
-Object.freeze(cmThemeList);
+const themesList = Object.keys(themes).map((theme) => ({ value: theme, text: theme }));
 
 export default {
   props: {
@@ -522,13 +473,15 @@ export default {
       default: false,
     },
   },
+  
   data() {
     return {
+      readOnly: false,
+      store: createThemeStore("material-dark"),
       exampleScriptList,
       exampleScriptChangePromise: null,
-      selectedCmTheme: "material-darker",
-      cmThemeList,
-      cmThemeChangePromise: null,
+      cmThemeList: themesList,
+      keybindings: "default",
       isRunScriptOnWorker: true,
       isScriptRunning: false,
       runningOps: null,
@@ -541,6 +494,15 @@ export default {
     };
   },
   computed: {
+     selectedCmTheme: {
+      get() {
+        return this.store.state.current;
+      },
+      set(theme) {
+        this.store.update(theme);
+      }
+     },
+
     runDisabled() {
       return this.isScriptRunning || this.exampleScriptChangePromise !== null;
     },
@@ -573,7 +535,7 @@ export default {
       }
       this.runningOps = null;
       await this.$_r.doRunScript(
-        this.$refs.editor.getEditor(),
+        this.getEditor(),
         this.isRunScriptOnWorker,
         this.$refs.result,
         (ops) => {
@@ -584,7 +546,7 @@ export default {
       this.isScriptRunning = false;
     },
     /**
-     * @returns {CodeMirror.Editor}
+     * @returns {unknown}
      */
     getEditor() {
       return this.$refs.editor.getEditor();
@@ -595,7 +557,7 @@ export default {
     loadExampleScript(key) {
       const cm = this.getEditor();
       this.$_r.tryCompileDebounced.cancel();
-      cm.setOption("readOnly", true);
+      this.readOnly = true;
       this.exampleScriptChangePromise = exampleScriptsImport[key]()
         .then((module) => {
           cm.setValue(module.default);
@@ -608,49 +570,14 @@ export default {
           console.error("Error loading script", e);
         })
         .finally(() => {
-          cm.setOption("readOnly", false);
+          this.readOnly = false;
           this.exampleScriptChangePromise = null;
         });
     },
-    cmRefresh() {
-      this.$nextTick(() => this.getEditor().refresh());
-    },
-    activeTabChanged(newTab) {
-      if (newTab === 0) {
-        this.cmRefresh();
-      } else if (newTab === 2) {
-        this.$nextTick(() => this.$refs.bytecodeView.getEditor().refresh());
-      } else if (newTab === 3) {
-        this.$nextTick(() => this.$refs.astView.getEditor().refresh());
-      } else if (newTab === 4) {
-        this.$nextTick(() => this.$refs.expandedAstView.getEditor().refresh());
-      }
-    },
   },
   watch: {
-    selectedCmTheme(theme, oldVal) {
-      if (!theme) {
-        return;
-      }
-      const cm = this.getEditor();
-      if (theme === "default") {
-        cm.setOption("theme", "default");
-        return;
-      }
-
-      this.cmThemeChangePromise = cmThemesImport[theme]()
-        .then((module) => {
-          cm.setOption("theme", theme);
-          this.$refs.bytecodeView.getEditor().setOption("theme", theme);
-          this.$refs.astView.getEditor().setOption("theme", theme);
-          this.$refs.expandedAstView.getEditor().setOption("theme", theme);
-        })
-        .catch((e) => {
-          console.error("Error loading theme", e);
-        })
-        .finally(() => {
-          this.cmThemeChangePromise = null;
-        });
+    keybindings(keybinding) {
+      this.getEditor().setKeybinding(keybinding);
     },
   },
   mounted() {
@@ -659,7 +586,6 @@ export default {
     r.tryCompileDebounced.trigger(cm);
     this.$_r = r;
     this.$nextTick(() => {
-      cm.refresh();
       cm.setValue(this.initialCode);
       cm.focus();
     });
